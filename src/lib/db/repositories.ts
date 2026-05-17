@@ -154,32 +154,18 @@ export async function getDecisionSnapshotDetail(decisionId: string, snapshotId: 
     return null;
   }
 
-  const [normalized] = snapshot
-    ? await db.select().from(normalizedDecisions).where(eq(normalizedDecisions.snapshotId, snapshot.id))
-    : [];
-  const [premortem] = snapshot
-    ? await db.select().from(premortemAnalyses).where(eq(premortemAnalyses.snapshotId, snapshot.id))
-    : [];
-  const [regret] = snapshot
-    ? await db.select().from(regretAnalyses).where(eq(regretAnalyses.snapshotId, snapshot.id))
-    : [];
-  const [synthesis] = snapshot
-    ? await db.select().from(synthesisDrafts).where(eq(synthesisDrafts.snapshotId, snapshot.id))
-    : [];
-  const [recommendation] = snapshot
-    ? await db.select().from(recommendations).where(eq(recommendations.snapshotId, snapshot.id))
-    : [];
-  const [memo] = snapshot
-    ? await db.select().from(decisionMemos).where(eq(decisionMemos.snapshotId, snapshot.id))
-    : [];
+  const [normalized] = await db.select().from(normalizedDecisions).where(eq(normalizedDecisions.snapshotId, snapshot.id));
+  const [premortem] = await db.select().from(premortemAnalyses).where(eq(premortemAnalyses.snapshotId, snapshot.id));
+  const [regret] = await db.select().from(regretAnalyses).where(eq(regretAnalyses.snapshotId, snapshot.id));
+  const [synthesis] = await db.select().from(synthesisDrafts).where(eq(synthesisDrafts.snapshotId, snapshot.id));
+  const [recommendation] = await db.select().from(recommendations).where(eq(recommendations.snapshotId, snapshot.id));
+  const [memo] = await db.select().from(decisionMemos).where(eq(decisionMemos.snapshotId, snapshot.id));
 
-  const runs = snapshot
-    ? await db
-        .select()
-        .from(stageRuns)
-        .where(eq(stageRuns.snapshotId, snapshot.id))
-        .orderBy(stageRuns.stage, desc(stageRuns.version))
-    : [];
+  const runs = await db
+    .select()
+    .from(stageRuns)
+    .where(eq(stageRuns.snapshotId, snapshot.id))
+    .orderBy(stageRuns.stage, desc(stageRuns.version));
 
   return {
     decision,
