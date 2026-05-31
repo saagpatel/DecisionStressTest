@@ -29,7 +29,7 @@ Decision Stress Test is a local-first decision workbench for medium-stakes profe
    ```bash
    npm install
    ```
-2. Copy `.env.example` to `.env.local` if you want to change defaults.
+2. Create `.env.local` if you want to override defaults. Available variables are declared in `src/lib/config/env-schema.ts`.
 3. Run migrations and optional seed data.
    ```bash
    npm run db:migrate
