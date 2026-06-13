@@ -171,4 +171,57 @@ describe("snapshot history helpers", () => {
     expect(comparison.decisionDelta.confidenceSummary).toContain("stayed medium");
     expect(comparison.decisionDelta.nextStepSummary).toContain("stayed the same");
   });
+
+  test("reports scoring deltas only when criterion scores change", () => {
+    const changedScoring: Recommendation = {
+      ...baseRecommendation,
+      scoring: {
+        ...baseRecommendation.scoring,
+        reversibility: 2,
+        evidenceQuality: 5,
+      },
+    };
+
+    const buildComparison = (recommendation: Recommendation) =>
+      deriveSnapshotComparison({
+        current: {
+          snapshotId: "snapshot_2",
+          version: 2,
+          intake: baseIntake,
+          artifacts: {
+            normalization: true,
+            premortem: true,
+            regret: true,
+            synthesis: true,
+            memo: true,
+          },
+          recommendation,
+        },
+        previous: {
+          snapshotId: "snapshot_1",
+          version: 1,
+          intake: baseIntake,
+          artifacts: {
+            normalization: true,
+            premortem: true,
+            regret: true,
+            synthesis: true,
+            memo: true,
+          },
+          recommendation: baseRecommendation,
+        },
+      });
+
+    const changed = buildComparison(changedScoring);
+    expect(changed.scoringDeltas).toHaveLength(2);
+    expect(changed.scoringDeltas).toEqual(
+      expect.arrayContaining([
+        { criterion: "reversibility", from: 4, to: 2 },
+        { criterion: "evidenceQuality", from: 3, to: 5 },
+      ]),
+    );
+
+    const identical = buildComparison(baseRecommendation);
+    expect(identical.scoringDeltas).toEqual([]);
+  });
 });
