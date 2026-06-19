@@ -41,6 +41,22 @@ type SnapshotComparisonFieldChange = {
   currentValue: string;
 };
 
+type ScoringDelta = {
+  criterion: string;
+  from: number | null;
+  to: number | null;
+};
+
+const scoringCriteria = [
+  "reversibility",
+  "evidenceQuality",
+  "upsideMagnitude",
+  "downsideSeverity",
+  "mitigability",
+  "costOfDelay",
+  "assumptionFragility",
+] as const;
+
 type RecommendationComparisonKind = "original" | "pending_refresh" | "introduced" | "changed" | "unchanged" | "none";
 
 export type SnapshotComparisonViewModel = {
@@ -67,6 +83,7 @@ export type SnapshotComparisonViewModel = {
     confidenceSummary: string;
     nextStepSummary: string;
   };
+  scoringDeltas: ScoringDelta[];
   workflowDelta: {
     completedBefore: string[];
     completedNow: string[];
@@ -224,6 +241,25 @@ function describeDecisionChangeLabel(kind: RecommendationComparisonKind) {
   }
 }
 
+function deriveScoringDeltas(
+  previous: Recommendation | null,
+  current: Recommendation | null,
+): ScoringDelta[] {
+  const previousScoring = previous?.scoring;
+  const currentScoring = current?.scoring;
+
+  return scoringCriteria.flatMap((criterion) => {
+    const from = previousScoring ? previousScoring[criterion] : null;
+    const to = currentScoring ? currentScoring[criterion] : null;
+
+    if (from === to) {
+      return [];
+    }
+
+    return [{ criterion, from, to }];
+  });
+}
+
 export function deriveSnapshotHistoryRowSummary(params: {
   isCurrentSnapshot: boolean;
   latestCompletedStage: StageName;
@@ -291,6 +327,7 @@ export function deriveSnapshotComparison(params: {
         confidenceSummary: describeConfidenceChange(null, params.current.recommendation),
         nextStepSummary: describeNextStepChange(null, params.current.recommendation),
       },
+      scoringDeltas: deriveScoringDeltas(null, params.current.recommendation),
       workflowDelta: {
         completedBefore: [],
         completedNow,
@@ -409,6 +446,7 @@ export function deriveSnapshotComparison(params: {
       confidenceSummary: describeConfidenceChange(params.previous.recommendation, params.current.recommendation),
       nextStepSummary: describeNextStepChange(params.previous.recommendation, params.current.recommendation),
     },
+    scoringDeltas: deriveScoringDeltas(params.previous.recommendation, params.current.recommendation),
     workflowDelta: {
       completedBefore,
       completedNow,
