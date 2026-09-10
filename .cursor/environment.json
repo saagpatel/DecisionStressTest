@@ -1,0 +1,6 @@
+{
+  "name": "decision-stress-test",
+  "disableAllMcpServers": true,
+  "install": "bash .cursor/install.sh",
+  "start": "true"
+}
