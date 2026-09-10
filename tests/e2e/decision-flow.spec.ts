@@ -1,11 +1,18 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function tabUntilFocused(page: Page, locator: ReturnType<Page["locator"]>, maxTabs = 25) {
-  for (let attempt = 0; attempt < maxTabs; attempt += 1) {
-    await page.keyboard.press("Tab");
+  await expect(locator).toBeVisible();
+
+  for (let attempt = 0; attempt <= maxTabs; attempt += 1) {
     if (await locator.evaluate((node) => node === document.activeElement)) {
       return;
     }
+
+    if (attempt === maxTabs) {
+      break;
+    }
+
+    await page.keyboard.press("Tab");
   }
 
   await expect(locator).toBeFocused();
@@ -67,6 +74,8 @@ async function runAllStages(page: Page) {
   await page.getByRole("button", { name: "Run premortem" }).click();
   await page.getByRole("button", { name: "Run regret" }).click();
   await page.getByRole("button", { name: "Run synthesis" }).click();
+  await expect(page.getByRole("button", { name: "Rerun synthesis" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open memo" })).toBeVisible();
 }
 
 async function saveIntakeRevision(page: Page, whyThisMatters: string) {
@@ -154,6 +163,7 @@ test("supports keyboard movement through decision navigation and local controls"
   await createDecision(page, `Keyboard traversal ${Date.now()}`);
   await runAllStages(page);
 
+  await expect(page.getByRole("link", { name: "Open memo" })).toBeVisible();
   await page.locator("#page-content").focus();
   await tabUntilFocused(page, page.getByRole("link", { name: "← Back to decision history" }));
   await tabUntilFocused(page, page.getByRole("link", { name: "Open memo" }));
