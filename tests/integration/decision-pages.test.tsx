@@ -67,6 +67,9 @@ describe("decision route rendering", () => {
     render(await pageModule.default({ params: Promise.resolve({ decisionId }) }));
 
     expect(screen.getByRole("heading", { name: "Workbench render check" })).toBeInTheDocument();
+    const openMemo = screen.getByRole("link", { name: "Open memo" });
+    expect(openMemo).toHaveAttribute("href", `/decisions/${decisionId}/memo`);
+    expect(openMemo.className).toContain("focus-visible:ring-2");
     expect(screen.getByTestId("workbench-summary-rail")).toBeInTheDocument();
     const nextActionPanel = within(screen.getByTestId("next-action-panel"));
     expect(nextActionPanel.getByText("Next action")).toBeInTheDocument();

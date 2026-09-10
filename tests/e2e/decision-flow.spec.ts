@@ -11,6 +11,24 @@ async function tabUntilFocused(page: Page, locator: ReturnType<Page["locator"]>,
   await expect(locator).toBeFocused();
 }
 
+async function expectVisibleKeyboardFocus(locator: ReturnType<Page["locator"]>) {
+  await expect(locator).toBeFocused();
+  await expect(locator).toBeInViewport();
+
+  const appearance = await locator.evaluate((node) => {
+    const element = node as HTMLElement;
+    const style = getComputedStyle(element);
+    return {
+      focusVisible: element.matches(":focus-visible"),
+      boxShadow: style.boxShadow,
+    };
+  });
+
+  expect(appearance.focusVisible).toBe(true);
+  expect(appearance.boxShadow).not.toBe("none");
+  expect(appearance.boxShadow).toMatch(/0px 0px 0px 2px/);
+}
+
 async function createDecision(page: Page, title: string) {
   await page.goto("/decisions/new");
 
@@ -100,6 +118,36 @@ test("supports skip-link focus and route focus landing on navigation", async ({ 
   await page.getByRole("link", { name: "← Back to home" }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("#page-content")).toBeFocused();
+});
+
+test("keyboard traversal focuses Open memo and opens the memo route", async ({ page }) => {
+  await createDecision(page, `Open memo keyboard focus ${Date.now()}`);
+  await runAllStages(page);
+
+  const backLink = page.getByRole("link", { name: "← Back to decision history" });
+  const openMemo = page.getByRole("link", { name: "Open memo" });
+  const workbenchNav = page.getByRole("link", { name: "Workbench", exact: true });
+
+  await expect(openMemo).toBeVisible();
+  await expect(openMemo).toHaveAttribute("href", /\/decisions\/[^/]+\/memo$/);
+
+  await page.locator("#page-content").focus();
+  await page.keyboard.press("Tab");
+  await expect(backLink).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(openMemo).toBeFocused();
+  await expectVisibleKeyboardFocus(openMemo);
+
+  await page.keyboard.press("Tab");
+  await expect(workbenchNav).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expectVisibleKeyboardFocus(openMemo);
+
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/decisions\/[^/]+\/memo$/);
+  await expect(page.locator("#page-content")).toBeFocused();
+  await expect(page.getByText("This is the current snapshot memo.")).toBeVisible();
+  await expect(page.getByText("Analysis source", { exact: true }).first()).toBeVisible();
 });
 
 test("supports keyboard movement through decision navigation and local controls", async ({ page }) => {
