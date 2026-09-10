@@ -53,7 +53,7 @@ export default async function DecisionDetailPage({
           detail.recommendation ? (
             <Link
               href={`/decisions/${decisionId}/memo`}
-              className="rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+              className="rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
               Open memo
             </Link>
