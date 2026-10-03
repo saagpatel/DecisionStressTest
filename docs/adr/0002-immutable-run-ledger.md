@@ -12,6 +12,9 @@ The product's trust depends on showing how a recommendation was formed and allow
 - Project the current state from the latest snapshot and latest successful stage runs for that snapshot.
 - Persist the final recommendation and memo as artifacts tied to the snapshot and stage run that produced them.
 
+## Implementation note
+As implemented, stage runs are versioned rather than strictly immutable: a run's status and output are updated on completion or failure, and prior successful runs are marked superseded when replaced or invalidated. Current state projects from the latest snapshot and its current stage artifacts; successful reruns replace that stage's artifacts and invalidate downstream artifacts.
+
 ## Consequences
 - Replay and rerun behavior stays inspectable.
 - Downstream invalidation becomes explicit when intake changes.
