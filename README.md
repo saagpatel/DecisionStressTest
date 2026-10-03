@@ -6,7 +6,7 @@ Decision Stress Test is a local-first decision workbench for medium-stakes profe
 
 - Structured intake over blank text boxes
 - Server-side staged analysis over one giant prompt
-- Immutable snapshots and stage runs for replayability
+- Immutable snapshots and versioned stage runs for replayability
 - Read-only snapshot history for reviewing how recommendations changed over time
 - Deterministic recommendation labels from structured factors
 - Local SQLite persistence with a private app-data directory
@@ -33,7 +33,7 @@ matching prebuilt binary or the platform's C/C++ build tools.
    ```bash
    npm ci
    ```
-2. Create `.env.local` if you want to override defaults. Available variables are declared in `src/lib/config/env-schema.ts`.
+2. Create `.env.local` if you want to override Next.js defaults. Standalone CLI scripts read the shell environment, so export any overrides before running them. Available variables are declared in `src/lib/config/env-schema.ts`.
 3. Run migrations and optional seed data.
    ```bash
    npm run db:migrate
@@ -46,7 +46,7 @@ matching prebuilt binary or the platform's C/C++ build tools.
 
 The app binds to `127.0.0.1` by default. Runtime data is stored outside the repo in a private app-data directory unless you override `DATA_DIR` or `DATABASE_PATH`.
 
-When `APP_ENV=test`, runtime data is isolated under `.tmp/app-data` so tests and browser checks do not write into the real local app-data directory.
+When `APP_ENV=test`, the default app-data directory is `.tmp/app-data`; explicit `DATA_DIR` and `DATABASE_PATH` overrides still take precedence. Test scripts set `.tmp` database paths, and browser checks also set an isolated app-data directory.
 
 ## Commands
 
@@ -73,8 +73,8 @@ npm run smoke:openai
 ## Architecture notes
 
 - Intake revisions create new immutable snapshots.
-- Each analysis stage creates an immutable stage run tied to one snapshot.
-- Current decision state is projected from the latest snapshot plus the latest successful runs for that snapshot.
+- Each analysis execution creates a versioned stage run tied to one snapshot; its status and output are updated on completion or failure, and prior successful runs can be marked superseded.
+- Current decision state is projected from the latest snapshot and its current stage artifacts; successful reruns replace that stage's artifacts and invalidate downstream artifacts.
 - Historical snapshots can be reviewed side by side without reactivating them as the live workbench.
 - The workbench derives explicit stage states so blocked, stale, failed, and ready stages are visible in the UI.
 - Local backups are written into the runtime backups directory and restores stay CLI-only.
@@ -94,7 +94,7 @@ npm run smoke:openai
 
 - Database: the SQLite file lives in the private app-data directory unless `DATABASE_PATH` overrides it.
 - Backups: timestamped SQLite backups live in the `backups` folder under the app-data directory.
-- Exports: memo exports live under the runtime exports path when the browser downloads them locally.
+- Exports: memo exports are browser downloads saved to the browser's chosen destination; the runtime exports directory is created but unused.
 - Logs: structured logs are emitted locally through the app process today; the runtime logs directory is reserved for future local file sinks.
 - Restore stays CLI-only. Close the app first, then run `npm run db:restore -- <backup-file>`.
 - Restore now creates a safety backup first when it replaces an existing live database file.
@@ -102,7 +102,7 @@ npm run smoke:openai
 
 ## Provider modes
 
-- Mock mode is the default for normal development, tests, evals, and release checks.
+- Mock mode is the default for normal development and is explicitly selected by test, eval, and browser scripts. The release gate's doctor and standalone build inherit the operator environment.
 - You do not need an OpenAI key to use the app locally in mock mode.
 - OpenAI mode is enabled only when `AI_PROVIDER=openai`, `AI_ENABLED=true`, and `OPENAI_API_KEY` is set.
 - `npm run smoke:openai` does not fall back to mock. It fails clearly if the OpenAI env is incomplete.

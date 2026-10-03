@@ -63,7 +63,7 @@ Requirements:
 - `AI_ENABLED=true`
 - `OPENAI_API_KEY` set
 
-The smoke path stays isolated in the test app-data area and does not silently fall back to mock.
+The smoke script sets a `.tmp` database path and defaults to the test app-data area unless `DATA_DIR` overrides it. It does not silently fall back to mock.
 
 ## 5. Restore safely
 
