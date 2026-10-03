@@ -25,9 +25,13 @@ Decision Stress Test is a local-first decision workbench for medium-stakes profe
 
 ## Local setup
 
+Use a supported Node version satisfying the locked dependencies (Node 22.12+
+is a suitable baseline) and npm. `better-sqlite3` is native: installation needs a
+matching prebuilt binary or the platform's C/C++ build tools.
+
 1. Install dependencies.
    ```bash
-   npm install
+   npm ci
    ```
 2. Create `.env.local` if you want to override defaults. Available variables are declared in `src/lib/config/env-schema.ts`.
 3. Run migrations and optional seed data.
@@ -76,7 +80,7 @@ npm run smoke:openai
 - Local backups are written into the runtime backups directory and restores stay CLI-only.
 - The app can use the mock provider by default, or OpenAI structured outputs when `AI_PROVIDER=openai` and `AI_ENABLED=true`.
 - `npm run doctor` checks whether the local env, paths, and provider configuration are healthy enough to use.
-- `npm run release:check` is the canonical local go/no-go gate before calling the app healthy. It now starts with `doctor`, then runs the code, eval, build, and browser checks in a hermetic local test environment.
+- `npm run release:check` is the canonical local go/no-go gate before calling the app healthy. Its initial `doctor` checks local-prod paths/configuration; the test, eval, and browser scripts use isolated mock data. The entire command is not a provider-independent substitute for checking the chosen operator environment.
 
 ## Local operator checklist
 
@@ -113,6 +117,18 @@ npm run smoke:openai
 
 ## Verification
 
+Run from the repository root in a disposable checkout without a copied
+`.env.local`. For a focused change, use a relevant file, for example:
+
+```bash
+npm test -- tests/unit/rubric.test.ts
+```
+
+The test/eval scripts explicitly use `APP_ENV=test`, mock AI, and `.tmp` SQLite
+paths. For a standalone build smoke use
+`APP_ENV=test AI_PROVIDER=mock AI_ENABLED=false npm run build` so the environment
+is explicit. There is no separate format script.
+
 The main local quality gates are:
 
 - `npm run typecheck`
@@ -122,6 +138,21 @@ The main local quality gates are:
 - `npm run build`
 - `npm run test:e2e`
 - `npm run release:check`
+
+For changed UI, routes, or memo/report behavior, install the configured browser
+with `npx playwright install chromium`, then run `npm run test:e2e` (or append
+`-- --grep <test-name>` for a focused case). The Playwright config starts its own
+loopback server on port 3100 with per-run mock data; leave that port free. The
+script deletes only its legacy `.tmp/e2e*` scratch paths, so use a disposable
+checkout and keep personal data out of those paths. See
+[manual repeated-use QA](docs/manual-qa-repeated-use.md) for conditional human
+checks using a synthetic decision. Pure documentation changes do not require
+browser execution.
+
+Migrations, seed, backup, restore, and normal `dev`/`start` operate on the selected
+runtime database; they are operator actions, not fixture verification. The
+optional `smoke:openai` makes real provider requests. Follow the linked operator
+and release checklists when those lanes are explicitly intended.
 
 ## Release readiness
 
