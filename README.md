@@ -25,7 +25,7 @@ Decision Stress Test is a local-first decision workbench for medium-stakes profe
 
 ## Local setup
 
-Use a supported Node version satisfying the locked dependencies (Node 22.12+
+Use a supported Node version satisfying the locked dependencies (Node 22.13+ within 22.x, 24.x, or 26+
 is a suitable baseline) and npm. `better-sqlite3` is native: installation needs a
 matching prebuilt binary or the platform's C/C++ build tools.
 
